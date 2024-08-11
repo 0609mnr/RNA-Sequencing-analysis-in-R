@@ -1,25 +1,13 @@
----
-title: "RNA-Sequencing analysis in R"
-author: "María Navarro-Riquelme"
-date: "2024-08-11"
-output:
-  html_document:
-    toc: true
-    df_print: paged
-geometry: margin=1in
-header-includes:
-- \usepackage{sectsty}
-- \sectionfont{\bfseries}
-- \subsectionfont{\bfseries}
-- \subsubsectionfont{\bfseries}
-- \setlength{\parskip}{0.5em}
----
+RNA-Sequencing analysis in R
+================
+María Navarro-Riquelme
+
+August 11, 2024
 
 
 
-
-
-## **0. INTRODUCTION**
+0. INTRODUCTION
+----------------
 
 RNA-Seq (RNA sequencing) is a high-throughput sequencing technique that allows for the comprehensive and large-scale analysis of the 
 transcriptome, which is the complete set of RNA molecules present in a cell or tissue at a given time. Unlike traditional methods, 
@@ -57,8 +45,8 @@ In this document, I provide a step-by-step RNA-Seq analysis using R tools, focus
 
 
 
-## **1. ENVIRONMENT AND PACKAGES**
-
+1. ENVIRONMENT AND PACKAGES
+---------------------------
 When we are working with a large dataset, it is highly recommended to save the R environment to make the coding process faster and more effective.
 
 ```{r}
@@ -99,14 +87,16 @@ library(KEGGREST)
 library(ComplexHeatmap)
 ```
 
-## **2. RESTRUCTURE THE DATA**
+2.RESTRUCTURE THE DATA
+-----------------------
 
 When we carry out RNASeq analysis from fastq files, we'll obtain a separated txt file of raw counts for each sample we are working with. Probably, it will be compressed. Then, once txt.gz files for each sample are saved on the same folder, we'll be able to deal with them in R in order to create a unique data table of raw counts.
 
 Normally, we'll obtain a txt file with two columns: one belonging to the Ensembl identifier and the other one to the number of counts.
 
 
-## **3. IMPORT COUNT DATA**
+3. IMPORT COUNT DATA
+---------------------
 
 ```{r}
 expression_data <- read_table("C:/Users/MARIA/Desktop/BIOINFORMATIC/PRUEBA RNASeq/GSE234465_estimated-counts.txt")
@@ -114,8 +104,6 @@ expression_data <- read_table("C:/Users/MARIA/Desktop/BIOINFORMATIC/PRUEBA RNASe
 expression_data <- as.data.frame(expression_data)
 head(expression_data,5)
 ```
-
-
 
 In case we are interested only in protein coding genes, we can filter dataset to ensure that we'll work just with the genes we are interested in. In this way, we can remove pseudogenes, lincRNA, antisense, snoRNA, snRNA, unknown genes, etc
 
@@ -129,12 +117,12 @@ head(expression,5)
 
 
 
-## **4. MANIPULATING THE DATA**
-
+4. MANIPULATING THE DATA
+-------------------------
 In this step, we'll establish the necessary format of the count table for further DEG analysis.
 
-#### 4.1. Establish **Ensembl ID** as row names. 
-
+4.1. Establish **Ensembl ID** as row names. 
+------------------------------------------
 
 If we try to establish "Gene Symbol" as row names we'll encounter some troubles because duplication problems often occur.
 
@@ -146,8 +134,8 @@ expression <- expression[,-c(1,2,3)]
 Finally, the result is a DataFrame in which row names are Ensembl ID and column names are samples we are working with.
 
 
-#### 4.2. Transform DataFrame into matrix
-
+4.2. Transform DataFrame into matrix
+------------------------------------
 ```{r}
 counts_mtrx <- as.matrix(expression)
 counts_mtrx <- apply(counts_mtrx, 2, as.numeric) # Counts must have numeric values
@@ -156,8 +144,8 @@ head(counts_mtrx,5)
 ```
 
 
-#### 4.3. Filtering the data
-
+4.3. Filtering the data
+------------------------
 Data can be filter out by mean reads per gene. This is a useful practice to reduce background and make dataset more manageable. In this case, we'll filter out genes that have at least a mean reads of 50. This value depends on the interest of each study.
 
 ```{r}
@@ -171,9 +159,11 @@ head(counts_mtrx,5)
 
 
 
-## **5. ASSOCIATE EACH SAMPLE TO A STUDY GROUP**
+5. ASSOCIATE EACH SAMPLE TO A STUDY GROUP
+------------------------------------------
 
-#### 5.1. Import sample information
+5.1. Import sample information
+------------------------------
 
 This info can be built in an Excel file or in the same RStudio terminal.
 
@@ -187,7 +177,8 @@ head(colData,5)
 ```
 
 
-#### 5.2. Establishment of groups
+5.2. Establishment of groups
+---------------------------
 
 ```{r}
 DGEobj <- DGEList(counts_mtrx)
@@ -198,10 +189,11 @@ DGEobj$sample
 
 
 
+6. DIFFERENTIAL GENE EXPRESSION ANALYSIS
+------------------------------------------
 
-## **6. DIFFERENTIAL GENE EXPRESSION ANALYSIS**
-
-#### 6.1. Create DGE object:
+6.1. Create DGE object:
+------------------------
 
 ```{r, message=FALSE, warning=FALSE}
 DE_Group <- DESeqDataSetFromMatrix(countData = counts_mtrx, colData = colData, 
@@ -209,10 +201,11 @@ DE_Group <- DESeqDataSetFromMatrix(countData = counts_mtrx, colData = colData,
 DE_Group <- DESeq(DE_Group)
 ```
 
-**IMPORTANT**: countData must necessarily be raw counts matrix. We don't have to use a normalized counts table instead because DESeq2 does its own calculations for normalize the data.
+IMPORTANT: countData must necessarily be raw counts matrix. We don't have to use a normalized counts table instead because DESeq2 does its own calculations for normalize the data.
 
 
-#### 6.2. Differential Gene Expression analysis between two groups: **Flight_Old vs. Ground_Old**
+6.2. Differential Gene Expression analysis between two groups: **Flight_Old vs. Ground_Old**
+--------------------------------------------------------------------------------------------
 
 ```{r}
 DE_Old <- results(DE_Group, contrast = c("Group","F_Old","G_Old"))
@@ -251,8 +244,8 @@ print(downreg_Old)
 
 
 
-#### 6.3. Gene Annotation
-
+6.3. Gene Annotation
+---------------------
 At this point, we can add some relevant info of genes such as Symbol, gene_id.
 
 Assigning different gene information is often useful as it may be needed in subsequent analyses.
@@ -279,9 +272,8 @@ head(resDE_Old,5)
 ```
 
 
-
-#### 6.4. Gene expression visualization using Volcano plot
-
+6.4. Gene expression visualization using Volcano plot
+-----------------------------------------------------
 Once we've prepared DESeq2 results DataFrame, we can add a Group column based on the gene expression. 
 We'll name genes with a padj \< 0.05 and log2FC \< -1 as down-regulated, while genes with a padj \< 0.05 and log2FC \> 1 as up-regulated.
 
@@ -341,9 +333,11 @@ ggplot(resDE_Old, aes(x = log2FoldChange,
 
 
 
-## **7. SAMPLE CLUSTERING**
+7. SAMPLE CLUSTERING
+--------------------
 
-### HEATMAP
+HEATMAP
+-------
 
 ```{r, fig.width=8, fig.height=10}
 # Filtering out DESeq2 results by padj significance
@@ -367,7 +361,8 @@ Heatmap(mat.z, cluster_rows = T, cluster_columns = T, column_labels = colnames(m
 
 ```
 
-### PCA PLOT
+PCA PLOT
+--------
 
 ```{r, fig.width=6, fig.height=4}
 
@@ -401,7 +396,8 @@ ggplot(pca_data, aes(PC1, PC2, color=Group, label=rownames(pca_data))) +
 
 
 
-## **8. ENRICHMENT OF GENE SETS AND PATHWAYS**
+8. ENRICHMENT OF GENE SETS AND PATHWAYS
+---------------------------------------
 
 In order to clarify what gene sets and pathways are up-regulated and down-regulated we'll extract a subset for each group based on the padj and log2FC value, being log2FC \> 1 as threshold to up-regulated genes and log2FC \< -1 as threshold to down-regulated genes. Padj threshold is \< 0.05 for both.
 
@@ -416,7 +412,8 @@ head(geneList_Old,5)
 ```
 
 
-### **8.1.ENRICHMENT OF UP-REGULATED GENES**
+8.1.ENRICHMENT OF UP-REGULATED GENES
+-------------------------------------
 
 ```{r}
 UP_Old <- subset(resDE_Old, padj <= 0.05 & log2FoldChange > 1)
@@ -427,9 +424,11 @@ head(de_UP_Old,5)
 ```
 
 
-#### **8.1.1.GENE ONTOLOGY:**
+8.1.1.GENE ONTOLOGY:
+--------------------
 
-**Biological Processes (BP)**
+Biological Processes (BP)
+------------------------
 
 ```{r, fig.width=10, fig.height=5}
 enrich_go_BP_Old_UP <- enrichGO(gene = de_UP_Old, # List of significantly up-regulated genes
@@ -463,7 +462,8 @@ ggplot(enrich_go_BP_Old_UP, aes(x = reorder(Description,
 ```
 
 
-**Molecular Functions (MF)**
+Molecular Functions (MF)
+------------------------
 
 ```{r, fig.width=10, fig.height=5}
 enrich_go_MF_Old_UP <- enrichGO(gene = de_UP_Old,  # List of significantly up-regulated genes
@@ -500,7 +500,8 @@ ggplot(enrich_go_MF_Old_UP, aes(x = reorder(Description,
 -\> Not enriched Molecular Functions.
 
 
-**Cellular Components (CC)**
+Cellular Components (CC)
+-------------------------
 
 ```{r, fig.width=10, fig.height=5}
 enrich_go_CC_Old_UP <- enrichGO(gene = de_UP_Old,  # List of significantly up-regulated genes
@@ -540,7 +541,8 @@ ggplot(enrich_go_CC_Old_UP, aes(x = reorder(Description,
 
 
 
-#### **8.1.2.PATHWAY ENRICHMENT (KEGG - Kyoto Encyclopedia of Genes and Genomes):**
+8.1.2.PATHWAY ENRICHMENT (KEGG - Kyoto Encyclopedia of Genes and Genomes):
+---------------------------------------------------------------------------
 
 ```{r, fig.width=10, fig.height=8}
 enrich_kegg_Old_UP <- enrichKEGG(gene = de_UP_Old,  # List of significantly up-regulated genes
@@ -578,7 +580,8 @@ ggplot(enrich_kegg_Old_UP, aes(x = Description,
 
 
 
-#### **8.1.3.GENE SET ENRICHMENT - GSEA (KEGG - Kyoto Encyclopedia of Genes and Genomes):**
+8.1.3.GENE SET ENRICHMENT - GSEA (KEGG - Kyoto Encyclopedia of Genes and Genomes):
+---------------------------------------------------------------------------------
 
 In this case, the input must be a table with the gene_id and log2FC
 
@@ -624,7 +627,8 @@ ggplot(gse_kegg_Old_UP, aes(x = reorder(gse_kegg_Old_UP$Description,
 
 
 
-### **8.2.ENRICHMENT OF DOWN-REGULATED GENES**
+8.2.ENRICHMENT OF DOWN-REGULATED GENES
+--------------------------------------
 
 ```{r}
 DOWN_Old <- subset(resDE_Old, padj <= 0.05 & log2FoldChange < -1)
@@ -636,9 +640,10 @@ head(de_DOWN_Old,5)
 
 
 
-#### **8.2.1.GENE ONTOLOGY:**
-
-**Biological Processes (BP)**
+8.2.1.GENE ONTOLOGY:
+--------------------
+Biological Processes (BP)
+-------------------------
 
 ```{r, fig.width=10, fig.height=5}
 enrich_go_BP_Old_DOWN <- enrichGO(de_DOWN_Old, # List of significantly down-regulated genes
@@ -674,9 +679,8 @@ ggplot(enrich_go_BP_Old_DOWN, aes(x = reorder(Description,
 ```
 
 
-
-**Molecular Function (MF)**
-
+Molecular Function (MF)
+-----------------------
 ```{r, fig.width=12, fig.height=5}
 enrich_go_MF_Old_DOWN <- enrichGO(de_DOWN_Old,  # List of significantly down-regulated genes
                                   universe = geneList_Old,  # List of genes used in DGE analysis
@@ -710,7 +714,8 @@ ggplot(enrich_go_MF_Old_DOWN, aes(x = reorder(Description,
 
 
 
-**Cellular Component (CC)**
+Cellular Component (CC)
+-------------------------
 
 ```{r, fig.width=10, fig.height=5}
 enrich_go_CC_Old_DOWN <- enrichGO(de_DOWN_Old,  # List of significantly down-regulated genes
@@ -747,7 +752,8 @@ ggplot(enrich_go_CC_Old_DOWN, aes(x = reorder(Description,
 
 
 
-#### **8.2.2.PATHWAY ENRICHMENT (KEGG - Kyoto Encyclopedia of Genes and Genomes):**
+8.2.2.PATHWAY ENRICHMENT (KEGG - Kyoto Encyclopedia of Genes and Genomes):
+--------------------------------------------------------------------------
 
 ```{r, fig.width=10, fig.height=5}
 enrich_kegg_Old_DOWN <- enrichKEGG(gene = de_DOWN_Old,  # List of significantly down-regulated genes
@@ -785,7 +791,8 @@ ggplot(enrich_kegg_Old_DOWN, aes(x = Description,
 
 
 
-#### **8.2.3.GENE SET ENRICHMENT - GSEA (KEGG - Kyoto Encyclopedia of Genes and Genomes):**
+8.2.3.GENE SET ENRICHMENT - GSEA (KEGG - Kyoto Encyclopedia of Genes and Genomes):
+----------------------------------------------------------------------------------
 
 In this case, the input must be a table with the gene_id and log2FC
 
@@ -831,7 +838,8 @@ ggplot(gse_kegg_Old_DOWN, aes(x = reorder(gse_kegg_Old_DOWN$Description,
 
 
 
-#### **8.3.PATHWAYS VISUALIZATION WITH PATHVIEW**
+8.3.PATHWAYS VISUALIZATION WITH PATHVIEW
+----------------------------------------
 
 Once the enrichment analysis is done, we can visualize the expression of the genes within a KEGG pathway using *pathview* library.
 
@@ -849,7 +857,7 @@ head(genes_pathview,5)
 
 ```
 
-**NOTE**: It's highly recommended to create this variable from our DEG analysis in order to use the same list of genes. This makes the analysis more precise and specific.
+NOTE: It's highly recommended to create this variable from our DEG analysis in order to use the same list of genes. This makes the analysis more precise and specific.
 
 
 
@@ -972,7 +980,8 @@ include_graphics("C:/Users/MARIA/Desktop/BIOINFORMATIC/PRUEBA RNASeq/Figures/Dil
 
 
 
-#### **8.4.VISUALIZATION OF GENE EXPRESSION OF A PATHWAY WITH KEGGREST**
+8.4.VISUALIZATION OF GENE EXPRESSION OF A PATHWAY WITH KEGGREST
+---------------------------------------------------------------
 
 Here, we can obtain a dot plot representing the expression of genes within a given pathway.
 
@@ -1465,16 +1474,17 @@ ggplot(hhsa05414_Old_expr_genes, aes(x = Symbol, y = log2FoldChange, fill = Grou
 
 
 
-## **9.ADDITIONAL INFO**
+9.ADDITIONAL INFO
+-----------------
 
 Some useful databases:
 
--   **GeneCards** to search info about certain gene: <https://www.genecards.org/>
+-   GeneCards to search info about certain gene: <https://www.genecards.org/>
 
--   **KEGG - Kyoto Encyclopedia of Genes and Genomes** to search info about pathways and others: <https://www.genome.jp/kegg/>
+-   KEGG - Kyoto Encyclopedia of Genes and Genomes to search info about pathways and others: <https://www.genome.jp/kegg/>
 
--   **Gene Expression Omnibus (GEO)** to select public dataset: <https://www.ncbi.nlm.nih.gov/geo/>
+-   Gene Expression Omnibus (GEO) to select public dataset: <https://www.ncbi.nlm.nih.gov/geo/>
 
--   **The Human Protein Atlas** to search info about certain protein: <https://www.proteinatlas.org/>
+-   The Human Protein Atlas to search info about certain protein: <https://www.proteinatlas.org/>
 
--   **IntAct Molecular Interaction Database** to analyze molecular interactions between proteins: <https://www.ebi.ac.uk/intact/home>
+-   IntAct Molecular Interaction Database to analyze molecular interactions between proteins: <https://www.ebi.ac.uk/intact/home>
