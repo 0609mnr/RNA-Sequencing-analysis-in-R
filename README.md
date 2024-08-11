@@ -1,13 +1,13 @@
 RNA-SEQUENCING ANALYSIS IN R
------------------------------
+=============================
 María Navarro-Riquelme
 
 August 11, 2024
 
 
 
-0. INTRODUCTION
-===============
+0.INTRODUCTION
+---------------
 
 RNA-Seq (RNA sequencing) is a high-throughput sequencing technique that allows for the comprehensive and large-scale analysis of the 
 transcriptome, which is the complete set of RNA molecules present in a cell or tissue at a given time. Unlike traditional methods, 
@@ -45,8 +45,8 @@ In this document, I provide a step-by-step RNA-Seq analysis using R tools, focus
 
 
 
-1. ENVIRONMENT AND PACKAGES
-===========================
+1.ENVIRONMENT AND PACKAGES
+---------------------------
 When we are working with a large dataset, it is highly recommended to save the R environment to make the coding process faster and more effective.
 
 ```{r}
@@ -95,7 +95,7 @@ When we carry out RNASeq analysis from fastq files, we'll obtain a separated txt
 Normally, we'll obtain a txt file with two columns: one belonging to the Ensembl identifier and the other one to the number of counts.
 
 
-3. IMPORT COUNT DATA
+3.IMPORT COUNT DATA
 ---------------------
 
 ```{r}
@@ -117,11 +117,11 @@ head(expression,5)
 
 
 
-4. MANIPULATING THE DATA
+4.MANIPULATING THE DATA
 -------------------------
 In this step, we'll establish the necessary format of the count table for further DEG analysis.
 
-4.1. Establish **Ensembl ID** as row names. 
+4.1.Establish **Ensembl ID** as row names. 
 ------------------------------------------
 
 If we try to establish "Gene Symbol" as row names we'll encounter some troubles because duplication problems often occur.
@@ -134,7 +134,7 @@ expression <- expression[,-c(1,2,3)]
 Finally, the result is a DataFrame in which row names are Ensembl ID and column names are samples we are working with.
 
 
-4.2. Transform DataFrame into matrix
+4.2.Transform DataFrame into matrix
 ------------------------------------
 ```{r}
 counts_mtrx <- as.matrix(expression)
@@ -144,7 +144,7 @@ head(counts_mtrx,5)
 ```
 
 
-4.3. Filtering the data
+4.3.Filtering the data
 ------------------------
 Data can be filter out by mean reads per gene. This is a useful practice to reduce background and make dataset more manageable. In this case, we'll filter out genes that have at least a mean reads of 50. This value depends on the interest of each study.
 
@@ -159,10 +159,10 @@ head(counts_mtrx,5)
 
 
 
-5. ASSOCIATE EACH SAMPLE TO A STUDY GROUP
+5.ASSOCIATE EACH SAMPLE TO A STUDY GROUP
 ------------------------------------------
 
-5.1. Import sample information
+5.1.Import sample information
 ------------------------------
 
 This info can be built in an Excel file or in the same RStudio terminal.
@@ -177,7 +177,7 @@ head(colData,5)
 ```
 
 
-5.2. Establishment of groups
+5.2.Establishment of groups
 ---------------------------
 
 ```{r}
@@ -189,10 +189,10 @@ DGEobj$sample
 
 
 
-6. DIFFERENTIAL GENE EXPRESSION ANALYSIS
+6.DIFFERENTIAL GENE EXPRESSION ANALYSIS
 ------------------------------------------
 
-6.1. Create DGE object:
+6.1.Create DGE object:
 ------------------------
 
 ```{r, message=FALSE, warning=FALSE}
@@ -204,7 +204,7 @@ DE_Group <- DESeq(DE_Group)
 IMPORTANT: countData must necessarily be raw counts matrix. We don't have to use a normalized counts table instead because DESeq2 does its own calculations for normalize the data.
 
 
-6.2. Differential Gene Expression analysis between two groups: **Flight_Old vs. Ground_Old**
+6.2.Differential Gene Expression analysis between two groups: **Flight_Old vs. Ground_Old**
 --------------------------------------------------------------------------------------------
 
 ```{r}
@@ -244,7 +244,7 @@ print(downreg_Old)
 
 
 
-6.3. Gene Annotation
+6.3.Gene Annotation
 ---------------------
 At this point, we can add some relevant info of genes such as Symbol, gene_id.
 
@@ -272,7 +272,7 @@ head(resDE_Old,5)
 ```
 
 
-6.4. Gene expression visualization using Volcano plot
+6.4.Gene expression visualization using Volcano plot
 -----------------------------------------------------
 Once we've prepared DESeq2 results DataFrame, we can add a Group column based on the gene expression. 
 We'll name genes with a padj \< 0.05 and log2FC \< -1 as down-regulated, while genes with a padj \< 0.05 and log2FC \> 1 as up-regulated.
@@ -333,7 +333,7 @@ ggplot(resDE_Old, aes(x = log2FoldChange,
 
 
 
-7. SAMPLE CLUSTERING
+7.SAMPLE CLUSTERING
 --------------------
 
 HEATMAP
@@ -396,7 +396,7 @@ ggplot(pca_data, aes(PC1, PC2, color=Group, label=rownames(pca_data))) +
 
 
 
-8. ENRICHMENT OF GENE SETS AND PATHWAYS
+8.ENRICHMENT OF GENE SETS AND PATHWAYS
 ---------------------------------------
 
 In order to clarify what gene sets and pathways are up-regulated and down-regulated we'll extract a subset for each group based on the padj and log2FC value, being log2FC \> 1 as threshold to up-regulated genes and log2FC \< -1 as threshold to down-regulated genes. Padj threshold is \< 0.05 for both.
