@@ -1,5 +1,5 @@
-RNA-Sequencing analysis in R
-================
+RNA-SEQUENCING ANALYSIS IN R
+-----------------------------
 María Navarro-Riquelme
 
 August 11, 2024
@@ -7,7 +7,7 @@ August 11, 2024
 
 
 0. INTRODUCTION
-----------------
+===============
 
 RNA-Seq (RNA sequencing) is a high-throughput sequencing technique that allows for the comprehensive and large-scale analysis of the 
 transcriptome, which is the complete set of RNA molecules present in a cell or tissue at a given time. Unlike traditional methods, 
@@ -46,7 +46,7 @@ In this document, I provide a step-by-step RNA-Seq analysis using R tools, focus
 
 
 1. ENVIRONMENT AND PACKAGES
----------------------------
+===========================
 When we are working with a large dataset, it is highly recommended to save the R environment to make the coding process faster and more effective.
 
 ```{r}
